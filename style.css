@@ -1,3 +1,9 @@
+
+
+body {
+    background-image: url('main.jpg');
+}
+
 h1[name="title"] {
     text-align: center; 
     color: aliceblue;
@@ -71,11 +77,11 @@ div[name="kalendar"] {
     animation: heartbeat 1.5s infinite;
     display: inline-block;
     color: red; /* цвет сердечка - желтый, чтобы выделялся на оранжевом фоне */
-    -webkit-text-stroke: 1px red; /* обводка для полого эффекта */
+    
     text-shadow: 0 0 3px rgba(255,255,255,0.5);
     z-index: 1;
     position: absolute;
-    scale: 1.5;
+    scale: 2.5;
 }
 
 
@@ -113,4 +119,14 @@ div[name="kalendar"] {
 
 .timer-block:hover {
     transform: scale(1.05);
+}
+
+@font-face {
+  font-family: "Lucida";
+  src: url("../fonts/Lucida CalligraphyС.ttf");
+}
+
+div[name="block_time"] {
+    text-align: center;
+    border: 1px solid #fc5a34;
 }
