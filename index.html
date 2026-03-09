@@ -550,63 +550,83 @@
                             let startBtn = document.querySelector('.ndt-start-btn');
                             let pauseBtn = document.querySelector('.ndt-pause-btn');
                             let myAudio = document.getElementById("ndt-bg-sound");
-                            myAudio.volume = 0.4; // Задаём громкость
-                            
-                            // Флаг, что музыка уже запускалась
+                            myAudio.volume = 0.4;
+
                             let audioStarted = false;
-                            
-                            // Функция запуска музыки с правильной обработкой Promise
+
                             function startAudio() {
-                                if (audioStarted) return; // Не запускаем повторно
-                                
+                                if (audioStarted) return Promise.resolve(); // Уже играет
+
                                 let playPromise = myAudio.play();
-                                
+
                                 if (playPromise !== undefined) {
-                                    playPromise.then(function() {
-                                        console.log('Audio started');
+                                    return playPromise.then(function() {
+                                        console.log('Audio started successfully');
                                         audioStarted = true;
-                                        preloaderBlock.classList.add('activated');
+                                        if (preloaderBlock) {
+                                            preloaderBlock.classList.add('activated');
+                                        }
                                     }).catch(function(error) {
                                         console.log('Play failed:', error);
-                                        // Не помечаем как запущенное при ошибке
+                                        audioStarted = false; // Сбрасываем флаг при ошибке
+                                        throw error; // Пробрасываем ошибку дальше, если нужно
                                     });
                                 }
+                                return Promise.resolve();
                             }
-                            
-                            // Запускаем при клике на документ
+
+                            // --- ИСПРАВЛЕНИЕ 1: Правильный запуск по клику на документ ---
                             $(document).one('click touchstart', function() {
-                                startAudio();
-                            });
-                            
-                            // ИСПРАВЛЕНО: Обработчик для кнопки старта
-                            startBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                // Используем ту же функцию startAudio для единообразия
-                                startAudio();
-                                // preloaderBlock.classList.add('activated'); // Убрано - это уже в startAudio
-                            });
-                            
-                            // ИСПРАВЛЕНО: Зацикливание с проверкой
-                            $("#ndt-bg-sound").on("ended", function() {
-                                // Сбрасываем флаг, чтобы можно было запустить снова
-                                audioStarted = false;
-                                // Не запускаем автоматически, ждем следующего клика
-                            });
-                            
-                            // ИСПРАВЛЕНО: Обработчик для кнопки паузы
-                            pauseBtn.addEventListener('click', function() {
-                                if (myAudio.paused) {
-                                    // При возобновлении тоже используем startAudio
-                                    startAudio();
-                                    pauseBtn.classList.remove('paused');
-                                } else {
-                                    myAudio.pause();
-                                    pauseBtn.classList.add('paused');
-                                }
+                                startAudio().catch(() => {}); // Пробуем запустить, игнорируем ошибку, если что
                             });
 
-                        });     
+                            // --- ИСПРАВЛЕНИЕ 2: Обработчик кнопки старта с role="button" ---
+                            if (startBtn) {
+                                // Важно: добавляем role="button" и tabindex для доступности
+                                startBtn.setAttribute('role', 'button');
+                                startBtn.setAttribute('tabindex', '0');
+                                
+                                startBtn.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    startAudio().catch(() => {}); // Запускаем и обрабатываем ошибку
+                                });
+                                
+                                // Также обрабатываем нажатие Enter для доступности
+                                startBtn.addEventListener('keypress', function(e) {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        startAudio().catch(() => {});
+                                    }
+                                });
+                            }
+
+                            // --- ИСПРАВЛЕНИЕ 3: Зацикливание без автоматического запуска ---
+                            $("#ndt-bg-sound").on("ended", function() {
+                                console.log('Audio ended');
+                                audioStarted = false; // Сбрасываем флаг
+                                // НЕ вызываем myAudio.play() автоматически!
+                                // Ждем нового действия пользователя
+                            });
+
+                            // --- ИСПРАВЛЕНИЕ 4: Кнопка паузы/плея ---
+                            if (pauseBtn) {
+                                pauseBtn.addEventListener('click', function() {
+                                    if (myAudio.paused) {
+                                        // При возобновлении тоже нужно действие пользователя
+                                        startAudio().then(() => {
+                                            pauseBtn.classList.remove('paused');
+                                        }).catch(() => {
+                                            // Если не удалось запустить, оставляем кнопку в состоянии "пауза"
+                                        });
+                                    } else {
+                                        myAudio.pause();
+                                        pauseBtn.classList.add('paused');
+                                    }
+                                });
+                            }
+
+                        });  
                     </script> 
                     <!-- nominify end --> 
                 </div> 
