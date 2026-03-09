@@ -546,51 +546,29 @@
                     <script>
                         $(document).ready(function(){
 
-                            // let preloaderBlock = document.querySelector('.uc-ndt-preloader');
-                            // let startBtn = document.querySelector('.ndt-start-btn');
-                            // let pauseBtn = document.querySelector('.ndt-pause-btn');
-                            // let myAudio = document.getElementById("ndt-bg-sound");
-                            // myAudio.volume = 0.4;//Задаём громкость
-                            
-                            // setTimeout(function() {
-                            //         startBtn.click();
-                            //     }, 1000);
-
-                            // startBtn.addEventListener('click', function() {
-                            //     myAudio.play();
-                            //     preloaderBlock.classList.add('activated');
-                            // })
-                            
-                            // $("#ndt-bg-sound").on("ended", function() {
-                            //     myAudio.play();
-                            // });
-                            // pauseBtn.addEventListener('click', function() {
-                            //     if (myAudio.paused) {
-                            //         myAudio.play();
-                            //         pauseBtn.classList.remove('paused');
-                            //     } else {
-                            //         myAudio.pause();
-                            //         pauseBtn.classList.add('paused');
-                            //     }
-                            // })
                             let preloaderBlock = document.querySelector('.uc-ndt-preloader');
                             let startBtn = document.querySelector('.ndt-start-btn');
                             let pauseBtn = document.querySelector('.ndt-pause-btn');
                             let myAudio = document.getElementById("ndt-bg-sound");
-                            myAudio.volume = 0.4;//Задаём громкость
+                            myAudio.volume = 0.4; // Задаём громкость
                             
                             // Флаг, что музыка уже запускалась
                             let audioStarted = false;
                             
-                            // Функция запуска музыки
+                            // Функция запуска музыки с правильной обработкой Promise
                             function startAudio() {
-                                if (!audioStarted) {
-                                    myAudio.play().then(function() {
+                                if (audioStarted) return; // Не запускаем повторно
+                                
+                                let playPromise = myAudio.play();
+                                
+                                if (playPromise !== undefined) {
+                                    playPromise.then(function() {
                                         console.log('Audio started');
                                         audioStarted = true;
                                         preloaderBlock.classList.add('activated');
                                     }).catch(function(error) {
                                         console.log('Play failed:', error);
+                                        // Не помечаем как запущенное при ошибке
                                     });
                                 }
                             }
@@ -600,30 +578,35 @@
                                 startAudio();
                             });
                             
-                            // Оставляем старую логику для кнопок
+                            // ИСПРАВЛЕНО: Обработчик для кнопки старта
                             startBtn.addEventListener('click', function(e) {
-                                e.stopPropagation(); // Предотвращаем двойной запуск
-                                if (!audioStarted) {
-                                    myAudio.play();
-                                    audioStarted = true;
-                                }
-                                preloaderBlock.classList.add('activated');
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // Используем ту же функцию startAudio для единообразия
+                                startAudio();
+                                // preloaderBlock.classList.add('activated'); // Убрано - это уже в startAudio
                             });
                             
+                            // ИСПРАВЛЕНО: Зацикливание с проверкой
                             $("#ndt-bg-sound").on("ended", function() {
-                                myAudio.play();
+                                // Сбрасываем флаг, чтобы можно было запустить снова
+                                audioStarted = false;
+                                // Не запускаем автоматически, ждем следующего клика
                             });
                             
+                            // ИСПРАВЛЕНО: Обработчик для кнопки паузы
                             pauseBtn.addEventListener('click', function() {
                                 if (myAudio.paused) {
-                                    myAudio.play();
+                                    // При возобновлении тоже используем startAudio
+                                    startAudio();
                                     pauseBtn.classList.remove('paused');
                                 } else {
                                     myAudio.pause();
                                     pauseBtn.classList.add('paused');
                                 }
                             });
-                                                });
+
+                        });     
                     </script> 
                     <!-- nominify end --> 
                 </div> 
